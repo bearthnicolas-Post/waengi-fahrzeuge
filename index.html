@@ -173,6 +173,11 @@
   </main>
 
   <script>
+    const SUPABASE_URL = "HIER_DEINE_PROJECT_URL";
+const SUPABASE_ANON = "HIER_DEIN_ANON_KEY";
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
     // --- Basic setup ---
     const VEHICLES = [
       "Kangoo 1", "Kangoo 2", "Kangoo 3", "Kangoo 4", "Kangoo 5",
