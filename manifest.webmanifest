@@ -1,0 +1,15 @@
+{
+  "name": "Wängi Fahrzeuge",
+  "short_name": "Fahrzeuge",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAv0lEQVR4nO3aQQqDQBQF0GfQyY2Qh2gk4wq0k1yQmJcQqBfQwJw0wq8gqYp0w2c8cV3m9Qq9Yl7y8w9wA0mQwAAAAAAAAAAAPwVb8s8m2x0y5m0b6w1kqQe0r2m0Qm3p8vQmVb6m3m3pJ8dQm1xw2m2Jq0m1n3b8y7i2fQk8c0m0zv7fXy1t9fQmQAAAAAAAAAAAHgFv9gWm3m7o2oAAAAASUVORK5CYII=",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ]
+}

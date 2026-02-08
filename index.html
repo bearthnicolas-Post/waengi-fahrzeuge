@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wängi Fahrzeuge</title>
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background:#0b1220; color:#e5e7eb; }
+    header { padding: 16px; background:#111827; position: sticky; top:0; border-bottom:1px solid rgba(255,255,255,.08); }
+    h1 { margin:0; font-size: 18px; }
+    main { padding: 16px; max-width: 880px; margin: 0 auto; }
+    .card { background:#111827; border:1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; margin: 12px 0; }
+    label { display:block; margin: 10px 0 6px; font-size: 13px; color:#cbd5e1; }
+    select, input, textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background:#0b1220; color:#e5e7eb; }
+    textarea { min-height: 90px; resize: vertical; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 700px){ .row { grid-template-columns: 1fr; } }
+    button { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12); background:#1f2937; color:#e5e7eb; cursor:pointer; }
+    button.primary { background:#2563eb; border-color:#2563eb; }
+    button.danger { background:#b91c1c; border-color:#b91c1c; }
+    button.ghost { background:transparent; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12); color:#cbd5e1; }
+    .muted { color:#9ca3af; font-size: 13px; }
+    .list { display:flex; flex-direction:column; gap: 10px; }
+    .item { border:1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px; background:#0b1220; }
+    .item h3 { margin:0 0 6px; font-size: 15px; }
+    .item .meta { display:flex; flex-wrap:wrap; gap: 8px; align-items:center; }
+    .split { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .tabs { display:flex; gap: 8px; flex-wrap:wrap; margin-top: 10px; }
+    .tabs button { padding: 8px 10px; border-radius: 999px; }
+    .tabs button.active { background:#2563eb; border-color:#2563eb; }
+    .hr { height:1px; background:rgba(255,255,255,.08); margin: 12px 0; }
+    .small { font-size: 12px; color:#9ca3af; }
+    a { color:#93c5fd; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="split">
+      <div>
+        <h1>Wängi Fahrzeuge</h1>
+        <div class="small">Pilot (lokal) – Meldungen & Wochenkontrolle</div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button id="tabReport" class="active" type="button">Mangel melden</button>
+        <button id="tabInspect" type="button">Wochenkontrolle</button>
+        <button id="tabOpen" type="button">Offen</button>
+        <button id="tabHistory" type="button">Historie</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="viewReport" class="card">
+      <h2 style="margin:0 0 8px;font-size:16px;">Mangel / Ereignis melden</h2>
+
+      <div class="row">
+        <div>
+          <label>Fahrzeug</label>
+          <select id="rVehicle"></select>
+        </div>
+        <div>
+          <label>Kategorie</label>
+          <select id="rCategory">
+            <option>Reifen</option>
+            <option>Licht</option>
+            <option>Bremsen</option>
+            <option>Flüssigkeiten (Öl/Wischwasser)</option>
+            <option>Schäden/Karosserie</option>
+            <option>Innenraum/Sauberkeit</option>
+            <option>Scanner/Technik im Fahrzeug</option>
+            <option>Tankkarte</option>
+            <option>Sonstiges</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Priorität</label>
+          <select id="rPriority">
+            <option value="sofort">Sofort</option>
+            <option value="woche">Diese Woche</option>
+            <option value="kannwarten">Kann warten</option>
+          </select>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="rStatus">
+            <option value="offen">Offen</option>
+            <option value="inbearbeitung">In Bearbeitung</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Beschreibung</label>
+      <textarea id="rNote" placeholder="Kurz & klar: Was ist los? Wo genau?"></textarea>
+
+      <label>Foto (optional)</label>
+      <input id="rPhoto" type="file" accept="image/*" capture="environment" />
+
+      <div class="hr"></div>
+      <div class="split">
+        <button id="rSave" class="primary" type="button">Speichern</button>
+        <button id="rReset" class="ghost" type="button">Felder leeren</button>
+      </div>
+      <p class="muted" style="margin:10px 0 0;">
+        Speichert lokal auf deinem Handy (LocalStorage). Später kann man das 1:1 auf Server/Cloud erweitern.
+      </p>
+    </div>
+
+    <div id="viewInspect" class="card" style="display:none;">
+      <h2 style="margin:0 0 8px;font-size:16px;">Wöchentliche Fahrzeugkontrolle</h2>
+
+      <div class="row">
+        <div>
+          <label>Fahrzeug</label>
+          <select id="iVehicle"></select>
+        </div>
+        <div>
+          <label>Kalenderwoche (automatisch)</label>
+          <input id="iWeek" readonly />
+        </div>
+      </div>
+
+      <label>Kontrollpunkte</label>
+      <div id="checklist" class="list"></div>
+
+      <label>Bemerkung (optional)</label>
+      <textarea id="iNote" placeholder="Nur falls nötig..."></textarea>
+
+      <label>Foto (nur wenn Mangel)</label>
+      <input id="iPhoto" type="file" accept="image/*" capture="environment" />
+
+      <div class="hr"></div>
+      <div class="split">
+        <button id="iSave" class="primary" type="button">Kontrolle speichern</button>
+        <button id="iReset" class="ghost" type="button">Zurücksetzen</button>
+      </div>
+    </div>
+
+    <div id="viewOpen" class="card" style="display:none;">
+      <div class="split">
+        <h2 style="margin:0;font-size:16px;">Offene Meldungen</h2>
+        <button id="exportJson" type="button">Export (JSON)</button>
+      </div>
+      <p class="muted">Hier siehst du alles, was noch nicht erledigt ist.</p>
+      <div id="openList" class="list"></div>
+    </div>
+
+    <div id="viewHistory" class="card" style="display:none;">
+      <div class="split">
+        <h2 style="margin:0;font-size:16px;">Historie</h2>
+        <button id="dangerResetAll" class="danger" type="button">Alles löschen</button>
+      </div>
+      <p class="muted">Alle Meldungen & Kontrollen (auch erledigte).</p>
+      <div id="historyList" class="list"></div>
+    </div>
+
+    <p class="small">
+      Tipp: Wenn du die App offiziell als Idee einreichst, wirkt’s super, wenn du 2–3 Screenshots + 1 kurzer Ablauf (Meldung → Übersicht → erledigt) beilegst.
+    </p>
+  </main>
+
+  <script>
+    // --- Basic setup ---
+    const VEHICLES = [
+      "Kangoo 1", "Kangoo 2", "Kangoo 3", "Kangoo 4", "Kangoo 5",
+      "Trafic 1", "Trafic 2"
+    ];
+
+    const CHECK_ITEMS = [
+      "Licht vorne/hinten",
+      "Reifen (Profil/Druck) sichtbar ok",
+      "Warnlampen/Displays keine Fehler",
+      "Wischwasser vorhanden",
+      "Scheiben/Wischer ok",
+      "Bremsen / Pedalgefühl ok",
+      "Sauberkeit (Innenraum/Frontscheibe)",
+      "Sicherheitsmaterial (z.B. Warndreieck, falls vorhanden)",
+      "Laderaum/Trennwand ok",
+      "Tankkarte vorhanden (falls relevant)"
+    ];
+
+    const LS_KEY = "waengi_fahrzeuge_v1";
+
+    function nowIso() { return new Date().toISOString(); }
+    function uid() { return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16); }
+
+    function getStore() {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return { reports: [], inspections: [] };
+      try { return JSON.parse(raw); } catch { return { reports: [], inspections: [] }; }
+    }
+    function setStore(store) {
+      localStorage.setItem(LS_KEY, JSON.stringify(store));
+    }
+
+    function isoToPretty(iso) {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString("de-CH");
+      } catch { return iso; }
+    }
+
+    function getKW(d = new Date()) {
+      // ISO week number
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const week = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+      return `${date.getUTCFullYear()}-KW${String(week).padStart(2,"0")}`;
+    }
+
+    async function fileToDataUrl(file) {
+      if (!file) return null;
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function pill(text) { return `<span class="pill">${text}</span>`; }
+
+    function priorityLabel(p) {
+      if (p === "sofort") return "Sofort";
+      if (p === "woche") return "Diese Woche";
+      return "Kann warten";
+    }
+
+    // --- Populate vehicle selects ---
+    function fillVehicles() {
+      const r = document.getElementById("rVehicle");
+      const i = document.getElementById("iVehicle");
+      r.innerHTML = "";
+      i.innerHTML = "";
+      for (const v of VEHICLES) {
+        const o1 = document.createElement("option");
+        o1.textContent = v;
+        r.appendChild(o1);
+        const o2 = document.createElement("option");
+        o2.textContent = v;
+        i.appendChild(o2);
+      }
+    }
+
+    // --- Checklist UI ---
+    function renderChecklist() {
+      const el = document.getElementById("checklist");
+      el.innerHTML = "";
+      CHECK_ITEMS.forEach((txt, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "item";
+        wrap.innerHTML = `
+          <div class="split">
+            <div>
+              <h3 style="margin:0;font-size:14px;">${txt}</h3>
+              <div class="small">OK / Mangel / n/a</div>
+            </div>
+            <select data-check="${idx}">
+              <option value="ok">OK</option>
+              <option value="mangel">Mangel</option>
+              <option value="na">n/a</option>
+            </select>
+          </div>
+        `;
+        el.appendChild(wrap);
+      });
+    }
+
+    // --- Tabs ---
+    function show(view) {
+      const views = ["Report","Inspect","Open","History"];
+      for (const v of views) {
+        document.getElementById("view"+v).style.display = (v === view) ? "" : "none";
+        document.getElementById("tab"+v).classList.toggle("active", v === view);
+      }
+      if (view === "Open") renderOpen();
+      if (view === "History") renderHistory();
+    }
+
+    // --- Render lists ---
+    function renderOpen() {
+      const { reports } = getStore();
+      const open = reports.filter(r => r.status !== "erledigt");
+      const el = document.getElementById("openList");
+      el.innerHTML = open.length ? "" : `<div class="muted">Keine offenen Meldungen 🎉</div>`;
+
+      open
+        .sort((a,b) => (a.priority === "sofort" ? -1 : 1) - (b.priority === "sofort" ? -1 : 1))
+        .forEach(r => {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.innerHTML = `
+            <div class="split">
+              <div>
+                <h3>${r.vehicle} – ${r.category}</h3>
+                <div class="meta">
+                  ${pill(priorityLabel(r.priority))}
+                  ${pill(r.status === "inbearbeitung" ? "In Bearbeitung" : "Offen")}
+                  <span class="small">${isoToPretty(r.createdAt)}</span>
+                </div>
+              </div>
+              <div class="meta">
+                <button data-done="${r.id}" class="primary" type="button">Erledigt</button>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:8px; white-space:pre-wrap;">${escapeHtml(r.note || "")}</div>
+            ${r.photo ? `<div style="margin-top:10px;"><img src="${r.photo}" style="max-width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.08)"/></div>` : ""}
+          `;
+          el.appendChild(div);
+        });
+
+      el.querySelectorAll("button[data-done]").forEach(btn => {
+        btn.addEventListener("click", () => markDone(btn.getAttribute("data-done")));
+      });
+    }
+
+    function renderHistory() {
+      const store = getStore();
+      const el = document.getElementById("historyList");
+      const all = [
+        ...store.reports.map(r => ({ type:"report", createdAt:r.createdAt, data:r })),
+        ...store.inspections.map(i => ({ type:"inspection", createdAt:i.createdAt, data:i }))
+      ].sort((a,b)=> b.createdAt.localeCompare(a.createdAt));
+
+      el.innerHTML = all.length ? "" : `<div class="muted">Noch keine Einträge.</div>`;
+
+      all.forEach(x => {
+        const div = document.createElement("div");
+        div.className = "item";
+        if (x.type === "report") {
+          const r = x.data;
+          div.innerHTML = `
+            <div class="split">
+              <div>
+                <h3>Meldung: ${r.vehicle} – ${r.category}</h3>
+                <div class="meta">
+                  ${pill(priorityLabel(r.priority))}
+                  ${pill(r.status === "erledigt" ? "Erledigt" : (r.status === "inbearbeitung" ? "In Bearbeitung" : "Offen"))}
+                  <span class="small">${isoToPretty(r.createdAt)}</span>
+                </div>
+              </div>
+              <div class="meta">
+                ${r.status !== "erledigt" ? `<button data-done="${r.id}" class="primary" type="button">Erledigt</button>` : ""}
+                <button data-del="${r.id}" class="danger" type="button">Löschen</button>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:8px; white-space:pre-wrap;">${escapeHtml(r.note || "")}</div>
+            ${r.photo ? `<div style="margin-top:10px;"><img src="${r.photo}" style="max-width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.08)"/></div>` : ""}
+          `;
+        } else {
+          const i = x.data;
+          const hasMangel = i.items.some(it => it.status === "mangel");
+          div.innerHTML = `
+            <div class="split">
+              <div>
+                <h3>Kontrolle: ${i.vehicle} – ${i.week}</h3>
+                <div class="meta">
+                  ${pill(hasMangel ? "Mangel" : "OK")}
+                  <span class="small">${isoToPretty(i.createdAt)}</span>
+                </div>
+              </div>
+              <div class="meta">
+                <button data-del-ins="${i.id}" class="danger" type="button">Löschen</button>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:8px;">
+              ${i.items.map(it => `${it.label}: ${it.status.toUpperCase()}`).join("<br>")}
+              ${i.note ? `<div style="margin-top:8px; white-space:pre-wrap;">${escapeHtml(i.note)}</div>` : ""}
+            </div>
+            ${i.photo ? `<div style="margin-top:10px;"><img src="${i.photo}" style="max-width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.08)"/></div>` : ""}
+          `;
+        }
+
+        el.appendChild(div);
+      });
+
+      el.querySelectorAll("button[data-done]").forEach(btn => btn.addEventListener("click", () => markDone(btn.getAttribute("data-done"))));
+      el.querySelectorAll("button[data-del]").forEach(btn => btn.addEventListener("click", () => deleteReport(btn.getAttribute("data-del"))));
+      el.querySelectorAll("button[data-del-ins]").forEach(btn => btn.addEventListener("click", () => deleteInspection(btn.getAttribute("data-del-ins"))));
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // --- Actions ---
+    async function saveReport() {
+      const vehicle = document.getElementById("rVehicle").value;
+      const category = document.getElementById("rCategory").value;
+      const priority = document.getElementById("rPriority").value;
+      const status = document.getElementById("rStatus").value;
+      const note = document.getElementById("rNote").value.trim();
+      const photoFile = document.getElementById("rPhoto").files[0];
+
+      if (!note) { alert("Bitte kurz beschreiben, was los ist."); return; }
+
+      const photo = await fileToDataUrl(photoFile).catch(()=>null);
+
+      const store = getStore();
+      store.reports.unshift({
+        id: uid(),
+        createdAt: nowIso(),
+        vehicle, category, priority, status,
+        note,
+        photo
+      });
+      setStore(store);
+
+      document.getElementById("rNote").value = "";
+      document.getElementById("rPhoto").value = "";
+      alert("Gespeichert ✅");
+      show("Open");
+    }
+
+    async function saveInspection() {
+      const vehicle = document.getElementById("iVehicle").value;
+      const week = document.getElementById("iWeek").value;
+      const note = document.getElementById("iNote").value.trim();
+      const photoFile = document.getElementById("iPhoto").files[0];
+      const photo = await fileToDataUrl(photoFile).catch(()=>null);
+
+      const items = [];
+      document.querySelectorAll("select[data-check]").forEach(sel => {
+        const idx = Number(sel.getAttribute("data-check"));
+        items.push({ label: CHECK_ITEMS[idx], status: sel.value });
+      });
+
+      const store = getStore();
+      store.inspections.unshift({
+        id: uid(),
+        createdAt: nowIso(),
+        vehicle,
+        week,
+        items,
+        note,
+        photo
+      });
+      setStore(store);
+
+      document.getElementById("iNote").value = "";
+      document.getElementById("iPhoto").value = "";
+      document.querySelectorAll("select[data-check]").forEach(sel => sel.value = "ok");
+
+      alert("Kontrolle gespeichert ✅");
+      show("History");
+    }
+
+    function markDone(id) {
+      const store = getStore();
+      const r = store.reports.find(x => x.id === id);
+      if (!r) return;
+      r.status = "erledigt";
+      r.closedAt = nowIso();
+      setStore(store);
+      renderOpen();
+      renderHistory();
+    }
+
+    function deleteReport(id) {
+      if (!confirm("Meldung wirklich löschen?")) return;
+      const store = getStore();
+      store.reports = store.reports.filter(r => r.id !== id);
+      setStore(store);
+      renderHistory();
+      renderOpen();
+    }
+
+    function deleteInspection(id) {
+      if (!confirm("Kontrolle wirklich löschen?")) return;
+      const store = getStore();
+      store.inspections = store.inspections.filter(i => i.id !== id);
+      setStore(store);
+      renderHistory();
+    }
+
+    function exportJSON() {
+      const store = getStore();
+      const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `waengi-fahrzeuge-export-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetAll() {
+      if (!confirm("Wirklich ALLES löschen? (Meldungen & Kontrollen)")) return;
+      localStorage.removeItem(LS_KEY);
+      alert("Alles gelöscht.");
+      renderOpen();
+      renderHistory();
+    }
+
+    // --- Init ---
+    fillVehicles();
+    renderChecklist();
+    document.getElementById("iWeek").value = getKW();
+
+    document.getElementById("rSave").addEventListener("click", saveReport);
+    document.getElementById("rReset").addEventListener("click", () => {
+      document.getElementById("rNote").value = "";
+      document.getElementById("rPhoto").value = "";
+      document.getElementById("rPriority").value = "sofort";
+      document.getElementById("rStatus").value = "offen";
+    });
+
+    document.getElementById("iSave").addEventListener("click", saveInspection);
+    document.getElementById("iReset").addEventListener("click", () => {
+      document.querySelectorAll("select[data-check]").forEach(sel => sel.value = "ok");
+      document.getElementById("iNote").value = "";
+      document.getElementById("iPhoto").value = "";
+    });
+
+    document.getElementById("exportJson").addEventListener("click", exportJSON);
+    document.getElementById("dangerResetAll").addEventListener("click", resetAll);
+
+    document.getElementById("tabReport").addEventListener("click", () => show("Report"));
+    document.getElementById("tabInspect").addEventListener("click", () => show("Inspect"));
+    document.getElementById("tabOpen").addEventListener("click", () => show("Open"));
+    document.getElementById("tabHistory").addEventListener("click", () => show("History"));
+
+    // Register service worker (offline)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+    }
+  </script>
+</body>
+</html>
+
